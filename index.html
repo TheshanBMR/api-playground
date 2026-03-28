@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080b0f;
+    --surface: #0e1318;
+    --surface2: #141a22;
+    --border: #1e2a36;
+    --border2: #243040;
+    --accent: #00e5ff;
+    --accent2: #00ff9d;
+    --accent3: #ff6b35;
+    --text: #c8d8e8;
+    --text-dim: #5a7a8a;
+    --text-bright: #eaf4ff;
+    --red: #ff4757;
+    --yellow: #ffd32a;
+    --green: #00ff9d;
+    --mono: 'JetBrains Mono', monospace;
+    --display: 'Syne', sans-serif;
+    --radius: 4px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* Full-page flex column — key fix for correct height */
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,229,255,0.012) 2px,rgba(0,229,255,0.012) 4px);
+    pointer-events: none; z-index: 9999;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0; flex-wrap: wrap;
+  }
+
+  .logo {
+    font-family: var(--display); font-weight: 800; font-size: 16px;
+    color: var(--text-bright); letter-spacing: -0.5px;
+    display: flex; align-items: center; gap: 8px; white-space: nowrap;
+  }
+  .logo-bracket { color: var(--accent); }
+  .logo-dot {
+    width: 7px; height: 7px; background: var(--accent2);
+    border-radius: 50%; box-shadow: 0 0 8px var(--accent2);
+    animation: pulse 2s ease-in-out infinite; flex-shrink: 0;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 8px var(--accent2)} 50%{opacity:.5;box-shadow:0 0 16px var(--accent2)} }
+
+  .header-tag {
+    font-size: 9px; color: var(--text-dim);
+    border: 1px solid var(--border2); padding: 2px 7px;
+    border-radius: 2px; letter-spacing: 1px; text-transform: uppercase; white-space: nowrap;
+  }
+  .header-spacer { flex: 1; min-width: 6px; }
+  .cors-note {
+    font-size: 10px; color: var(--text-dim);
+    background: rgba(255,107,53,0.08); border: 1px solid rgba(255,107,53,0.2);
+    padding: 3px 8px; border-radius: var(--radius); white-space: nowrap;
+  }
+  .history-btn {
+    background: var(--surface2); border: 1px solid var(--border2);
+    color: var(--text-dim); font-family: var(--mono); font-size: 10px;
+    padding: 4px 10px; cursor: pointer; border-radius: var(--radius);
+    transition: all .15s; letter-spacing: .5px; text-transform: uppercase; white-space: nowrap;
+  }
+  .history-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Presets ── */
+  .presets-bar {
+    display: flex; gap: 5px; padding: 7px 14px;
+    flex-wrap: wrap; background: var(--surface);
+    border-bottom: 1px solid var(--border); align-items: center; flex-shrink: 0;
+  }
+  .preset-label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-right: 2px; white-space: nowrap; }
+  .preset-btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text-dim); font-family: var(--mono); font-size: 10px;
+    padding: 3px 9px; cursor: pointer; border-radius: 2px; transition: all .15s; white-space: nowrap;
+  }
+  .preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── URL Bar ── */
+  .url-bar {
+    display: flex; align-items: stretch;
+    padding: 9px 14px; background: var(--surface);
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .method-select {
+    background: var(--surface2); border: 1px solid var(--border2); border-right: none;
+    color: var(--accent2); font-family: var(--mono); font-size: 11px; font-weight: 700;
+    padding: 8px 10px; cursor: pointer; border-radius: var(--radius) 0 0 var(--radius);
+    outline: none; width: 88px; flex-shrink: 0; appearance: none; -webkit-appearance: none;
+  }
+  .method-select option { background: var(--surface2); color: var(--text-bright); }
+  .method-select.GET    { color: var(--accent2); }
+  .method-select.POST   { color: var(--accent3); }
+  .method-select.PUT    { color: var(--yellow); }
+  .method-select.DELETE { color: var(--red); }
+  .method-select.PATCH  { color: #b388ff; }
+  .method-select.HEAD   { color: var(--accent); }
+  .method-select.OPTIONS{ color: var(--text-dim); }
+
+  .url-input {
+    flex: 1; min-width: 0;
+    background: var(--surface2); border: 1px solid var(--border2); border-left: none; border-right: none;
+    color: var(--text-bright); font-family: var(--mono); font-size: 12px;
+    padding: 8px 12px; outline: none; transition: border-color .2s;
+  }
+  .url-input:focus { border-color: var(--accent); }
+  .url-input::placeholder { color: var(--text-dim); }
+
+  .send-btn {
+    background: var(--accent); color: #000; border: none;
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    padding: 8px 18px; cursor: pointer;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    letter-spacing: 1px; text-transform: uppercase;
+    transition: all .15s; white-space: nowrap; flex-shrink: 0;
+  }
+  .send-btn:hover { background: #33ecff; }
+  .send-btn:active { transform: scale(.97); }
+  .send-btn.loading { background: var(--border2); color: var(--text-dim); cursor: not-allowed; }
+  .send-btn .spinner {
+    display: inline-block; width: 10px; height: 10px;
+    border: 2px solid rgba(0,0,0,.3); border-top-color: #000;
+    border-radius: 50%; animation: spin .6s linear infinite;
+    vertical-align: middle; margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Main two-panel layout ── */
+  /* flex:1 + min-height:0 = fills exactly the remaining viewport height */
+  .app {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* ── Request Panel ── */
+  .panel {
+    display: flex; flex-direction: column;
+    overflow: hidden; border-right: 1px solid var(--border); min-height: 0;
+  }
+  .panel-tabs {
+    display: flex; background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 10px; flex-shrink: 0; overflow-x: auto;
+  }
+  .tab {
+    font-family: var(--mono); font-size: 10px; color: var(--text-dim);
+    padding: 9px 11px; cursor: pointer; border-bottom: 2px solid transparent;
+    transition: all .15s; letter-spacing: .3px; background: none;
+    border-top: none; border-left: none; border-right: none;
+    text-transform: uppercase; white-space: nowrap; flex-shrink: 0;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .tab-content { flex: 1; min-height: 0; display: none; flex-direction: column; overflow: hidden; }
+  .tab-content.active { display: flex; }
+
+  /* ── KV editor: scrollable list + ALWAYS-VISIBLE add button ── */
+  .kv-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+  .kv-editor { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 12px 6px; display: flex; flex-direction: column; gap: 5px; }
+  /* The add button sits OUTSIDE the scrollable area so it never scrolls away */
+  .kv-footer { flex-shrink: 0; padding: 6px 12px 10px; border-top: 1px solid var(--border); background: var(--bg); }
+  .kv-add {
+    width: 100%; background: none; border: 1px dashed var(--border2);
+    color: var(--text-dim); font-family: var(--mono); font-size: 11px;
+    padding: 6px 12px; cursor: pointer; border-radius: var(--radius);
+    transition: all .15s; text-align: left;
+  }
+  .kv-add:hover { border-color: var(--accent); color: var(--accent); }
+
+  .kv-row { display: flex; gap: 5px; align-items: center; }
+  .kv-enabled { width: 14px; height: 14px; cursor: pointer; accent-color: var(--accent); flex-shrink: 0; }
+  .kv-input {
+    flex: 1; min-width: 0;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text-bright); font-family: var(--mono); font-size: 11px;
+    padding: 5px 8px; border-radius: var(--radius); outline: none; transition: border-color .2s;
+  }
+  .kv-input:focus { border-color: var(--accent); }
+  .kv-input::placeholder { color: var(--text-dim); }
+  .kv-del {
+    background: none; border: none; color: var(--text-dim);
+    cursor: pointer; font-size: 15px; padding: 2px 4px;
+    line-height: 1; transition: color .15s; flex-shrink: 0;
+  }
+  .kv-del:hover { color: var(--red); }
+
+  /* ── Body tab ── */
+  .body-toolbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 12px; border-bottom: 1px solid var(--border);
+    background: var(--surface); flex-shrink: 0;
+  }
+  .body-type {
+    background: var(--surface2); border: 1px solid var(--border2);
+    color: var(--text); font-family: var(--mono); font-size: 11px;
+    padding: 4px 8px; cursor: pointer; border-radius: var(--radius); outline: none; appearance: none;
+  }
+  .body-format-btn {
+    background: none; border: 1px solid var(--border2); color: var(--text-dim);
+    font-family: var(--mono); font-size: 10px; padding: 4px 8px;
+    cursor: pointer; border-radius: var(--radius); transition: all .15s; margin-left: auto;
+  }
+  .body-format-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .body-editor {
+    flex: 1; min-height: 0; background: var(--bg); border: none;
+    color: var(--accent2); font-family: var(--mono); font-size: 12px;
+    padding: 12px; resize: none; outline: none; line-height: 1.6; overflow-y: auto;
+  }
+
+  /* ── Auth tab ── */
+  .auth-wrap { flex: 1; min-height: 0; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+  .auth-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 5px; }
+
+  /* ── Response Panel ── */
+  .response-panel { display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+
+  .response-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 14px; background: var(--surface);
+    border-bottom: 1px solid var(--border); flex-shrink: 0; flex-wrap: wrap;
+  }
+  .response-title { font-family: var(--display); font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+
+  .status-badge { font-family: var(--mono); font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 2px; letter-spacing: .5px; }
+  .status-2xx { background: rgba(0,255,157,.1); color: var(--green); border: 1px solid rgba(0,255,157,.25); }
+  .status-3xx { background: rgba(255,211,42,.1); color: var(--yellow); border: 1px solid rgba(255,211,42,.25); }
+  .status-4xx { background: rgba(255,71,87,.1); color: var(--red); border: 1px solid rgba(255,71,87,.25); }
+  .status-5xx { background: rgba(255,107,53,.1); color: var(--accent3); border: 1px solid rgba(255,107,53,.25); }
+  .meta-chip { font-size: 10px; color: var(--text-dim); background: var(--surface2); border: 1px solid var(--border); padding: 2px 7px; border-radius: 2px; white-space: nowrap; }
+
+  .response-tabs {
+    display: flex; background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 10px; flex-shrink: 0; overflow-x: auto;
+  }
+  .res-tab {
+    font-family: var(--mono); font-size: 10px; color: var(--text-dim);
+    padding: 9px 11px; cursor: pointer; border-bottom: 2px solid transparent;
+    transition: all .15s; background: none; border-top: none; border-left: none; border-right: none;
+    text-transform: uppercase; letter-spacing: .3px; white-space: nowrap; flex-shrink: 0;
+  }
+  .res-tab:hover { color: var(--text); }
+  .res-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .res-content { flex: 1; min-height: 0; display: none; flex-direction: column; overflow: hidden; }
+  .res-content.active { display: flex; }
+
+  .response-body-wrap { flex: 1; min-height: 0; overflow-y: auto; position: relative; }
+
+  /* Sticky copy button inside the scrollable body */
+  .copy-btn-wrap { position: sticky; top: 0; display: flex; justify-content: flex-end; padding: 8px 10px 0; pointer-events: none; }
+  .copy-btn {
+    pointer-events: all;
+    background: var(--surface2); border: 1px solid var(--border2); color: var(--text-dim);
+    font-family: var(--mono); font-size: 10px; padding: 4px 10px;
+    cursor: pointer; border-radius: var(--radius); transition: all .15s;
+  }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .copy-btn.copied { color: var(--green); border-color: var(--green); }
+
+  pre.response-body {
+    font-family: var(--mono); font-size: 12px; color: var(--text);
+    padding: 4px 14px 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-all;
+  }
+
+  /* ── Media previews ── */
+  .media-wrap {
+    flex: 1; min-height: 0; overflow-y: auto;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 16px; gap: 12px;
+  }
+
+  .media-toolbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 12px; background: var(--surface);
+    border-bottom: 1px solid var(--border); flex-shrink: 0; flex-wrap: wrap;
+  }
+
+  .media-ct-badge {
+    font-size: 10px; color: var(--accent); background: rgba(0,229,255,.08);
+    border: 1px solid rgba(0,229,255,.2); padding: 2px 8px; border-radius: 2px;
+    font-family: var(--mono);
+  }
+
+  .dl-btn {
+    background: var(--surface2); border: 1px solid var(--border2); color: var(--text-dim);
+    font-family: var(--mono); font-size: 10px; padding: 4px 10px;
+    cursor: pointer; border-radius: var(--radius); transition: all .15s; margin-left: auto;
+    text-decoration: none; display: inline-block;
+  }
+  .dl-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  .media-preview-img {
+    max-width: 100%; max-height: calc(100% - 40px);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: repeating-conic-gradient(#1a2230 0% 25%, #141a22 0% 50%) 0 0/16px 16px;
+    display: block;
+  }
+
+  .media-preview-video,
+  .media-preview-audio {
+    width: 100%; max-width: 640px;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: #000; outline: none;
+  }
+
+  .media-preview-pdf {
+    width: 100%; flex: 1; min-height: 400px;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--surface2);
+  }
+
+  .media-preview-html {
+    width: 100%; flex: 1; min-height: 300px;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: #fff;
+  }
+
+  .media-info {
+    font-size: 11px; color: var(--text-dim); text-align: center;
+    font-family: var(--mono); padding: 8px 0;
+  }
+  .json-key  { color: var(--accent); }
+  .json-str  { color: var(--accent2); }
+  .json-num  { color: var(--accent3); }
+  .json-bool { color: var(--yellow); }
+  .json-null { color: var(--text-dim); }
+
+  .headers-table { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+  .header-row {
+    display: grid; grid-template-columns: minmax(120px,42%) 1fr;
+    gap: 6px; padding: 6px 8px;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius);
+  }
+  .header-name { color: var(--accent); font-size: 11px; word-break: break-all; }
+  .header-val  { color: var(--text); font-size: 11px; word-break: break-all; }
+
+  /* ── Empty state ── */
+  .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 30px; color: var(--text-dim); }
+  .empty-icon  { font-size: 34px; opacity: .3; filter: grayscale(1); }
+  .empty-title { font-family: var(--display); font-size: 14px; font-weight: 700; color: var(--border2); }
+  .empty-sub   { font-size: 11px; color: var(--text-dim); text-align: center; line-height: 1.8; }
+
+  /* ── Code Gen ── */
+  .codegen-toolbar {
+    display: flex; align-items: center; gap: 5px;
+    padding: 7px 12px; background: var(--surface);
+    border-bottom: 1px solid var(--border); flex-wrap: wrap; flex-shrink: 0;
+  }
+  .lang-btn {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
+    font-family: var(--mono); font-size: 10px; padding: 4px 9px;
+    cursor: pointer; border-radius: 2px; transition: all .15s;
+  }
+  .lang-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .lang-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(0,229,255,.08); }
+  .code-output {
+    flex: 1; min-height: 0; background: var(--bg); border: none;
+    color: var(--accent2); font-family: var(--mono); font-size: 12px;
+    padding: 14px; resize: none; outline: none; line-height: 1.7; overflow-y: auto;
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+  .toast {
+    position: fixed; bottom: 20px; right: 20px;
+    background: rgba(255,71,87,.15); border: 1px solid var(--red); color: var(--red);
+    font-family: var(--mono); font-size: 12px; padding: 10px 16px;
+    border-radius: var(--radius); z-index: 9999; opacity: 0;
+    transform: translateY(10px); transition: all .3s; max-width: 340px;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ── History ── */
+  .history-drawer {
+    position: fixed; top: 0; right: -320px; width: 320px; height: 100vh;
+    background: var(--surface); border-left: 1px solid var(--border);
+    z-index: 200; transition: right .3s ease; display: flex; flex-direction: column;
+  }
+  .history-drawer.open { right: 0; }
+  .history-header { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .history-title { font-family: var(--display); font-weight: 700; font-size: 14px; color: var(--text-bright); }
+  .close-drawer { background: none; border: none; color: var(--text-dim); font-size: 20px; cursor: pointer; line-height: 1; }
+  .close-drawer:hover { color: var(--text-bright); }
+  .history-list { flex: 1; overflow-y: auto; padding: 8px; }
+  .history-item { padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 5px; cursor: pointer; transition: all .15s; }
+  .history-item:hover { border-color: var(--accent); background: rgba(0,229,255,.04); }
+  .history-item-method { font-size: 10px; font-weight: 700; margin-bottom: 3px; }
+  .history-item-url    { font-size: 11px; color: var(--text-dim); word-break: break-all; }
+  .history-item-status { font-size: 10px; margin-top: 4px; }
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 199; display: none; }
+  .overlay.show { display: block; }
+
+  /* ── Responsive: stack on small screens ── */
+  @media (max-width: 680px) {
+    html, body { height: auto; overflow: auto; }
+    .app { grid-template-columns: 1fr; flex: none; height: auto; overflow: visible; }
+    .panel, .response-panel { min-height: 380px; height: 380px; border-right: none; border-bottom: 1px solid var(--border); }
+    .cors-note { display: none; }
+    .header-tag { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    <span><span class="logo-bracket">[</span>API<span class="logo-bracket">]</span> Playground</span>
+  </div>
+  <span class="header-tag">no login required</span>
+  <div class="header-spacer"></div>
+  <span class="cors-note">⚠ CORS restrictions apply for some APIs</span>
+  <button class="history-btn" onclick="toggleHistory()">⏱ History</button>
+</header>
+
+<div class="presets-bar">
+  <span class="preset-label">Try:</span>
+  <button class="preset-btn" onclick="loadPreset('jsonplaceholder')">JSONPlaceholder</button>
+  <button class="preset-btn" onclick="loadPreset('catfact')">Cat Fact</button>
+  <button class="preset-btn" onclick="loadPreset('joke')">Joke API</button>
+  <button class="preset-btn" onclick="loadPreset('ipify')">My IP</button>
+  <button class="preset-btn" onclick="loadPreset('country')">Country Info</button>
+  <button class="preset-btn" onclick="loadPreset('weather')">Open-Meteo</button>
+  <button class="preset-btn" onclick="loadPreset('post')">POST Example</button>
+  <button class="preset-btn" onclick="loadPreset('image')" style="color:var(--accent2);border-color:rgba(0,255,157,.3)">🖼 Image</button>
+  <button class="preset-btn" onclick="loadPreset('audio')" style="color:var(--yellow);border-color:rgba(255,211,42,.3)">🎵 Audio</button>
+  <button class="preset-btn" onclick="loadPreset('pdf')" style="color:var(--accent3);border-color:rgba(255,107,53,.3)">📄 PDF</button>
+</div>
+
+<div class="url-bar">
+  <select class="method-select GET" id="method" onchange="updateMethodStyle()">
+    <option>GET</option><option>POST</option><option>PUT</option>
+    <option>PATCH</option><option>DELETE</option><option>HEAD</option><option>OPTIONS</option>
+  </select>
+  <input class="url-input" id="urlInput" type="text"
+    placeholder="https://api.example.com/endpoint"
+    value="https://jsonplaceholder.typicode.com/posts/1"
+    onkeydown="if(event.key==='Enter')sendRequest()">
+  <button class="send-btn" id="sendBtn" onclick="sendRequest()">▶ Send</button>
+</div>
+
+<div class="app">
+
+  <!-- REQUEST PANEL -->
+  <div class="panel">
+    <div class="panel-tabs">
+      <button class="tab active" onclick="switchTab('req','headers',this)">Headers</button>
+      <button class="tab" onclick="switchTab('req','params',this)">Params</button>
+      <button class="tab" onclick="switchTab('req','body',this)">Body</button>
+      <button class="tab" onclick="switchTab('req','auth',this)">Auth</button>
+    </div>
+
+    <!-- Headers tab -->
+    <div class="tab-content active" id="req-headers">
+      <div class="kv-wrap">
+        <div class="kv-editor" id="headersKV"></div>
+        <div class="kv-footer">
+          <button class="kv-add" onclick="addKVRow('headersKV')">+ Add Header</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Params tab -->
+    <div class="tab-content" id="req-params">
+      <div class="kv-wrap">
+        <div class="kv-editor" id="paramsKV"></div>
+        <div class="kv-footer">
+          <button class="kv-add" onclick="addKVRow('paramsKV')">+ Add Param</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Body tab -->
+    <div class="tab-content" id="req-body">
+      <div class="body-toolbar">
+        <select class="body-type" id="bodyType">
+          <option>JSON</option><option>Form Data</option><option>Plain Text</option><option>XML</option>
+        </select>
+        <button class="body-format-btn" onclick="formatBody()">{ } Format</button>
+      </div>
+      <textarea class="body-editor" id="bodyEditor" placeholder='{\n  "key": "value"\n}'></textarea>
+    </div>
+
+    <!-- Auth tab -->
+    <div class="tab-content" id="req-auth">
+      <div class="auth-wrap">
+        <div>
+          <label class="auth-label">Auth Type</label>
+          <select class="body-type" id="authType" onchange="updateAuthUI()" style="width:100%">
+            <option value="none">None</option>
+            <option value="bearer">Bearer Token</option>
+            <option value="basic">Basic Auth</option>
+            <option value="apikey">API Key</option>
+          </select>
+        </div>
+        <div id="authFields"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESPONSE PANEL -->
+  <div class="response-panel">
+    <div class="response-header">
+      <span class="response-title">Response</span>
+      <div id="statusBadge"></div>
+      <div id="timeBadge"></div>
+      <div id="sizeBadge"></div>
+    </div>
+    <div class="response-tabs">
+      <button class="res-tab active" onclick="switchTab('res','body',this)">Body</button>
+      <button class="res-tab" onclick="switchTab('res','headers',this)">Headers</button>
+      <button class="res-tab" onclick="switchTab('res','codegen',this)">Code Gen</button>
+    </div>
+
+    <!-- Response body -->
+    <div class="res-content active" id="res-body">
+      <!-- Text/JSON body -->
+      <div id="textBodyWrap" style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">
+        <div class="response-body-wrap">
+          <div class="empty-state" id="emptyState">
+            <div class="empty-icon">⚡</div>
+            <div class="empty-title">No request yet</div>
+            <div class="empty-sub">Enter a URL and click Send.<br>Try a preset to get started.</div>
+          </div>
+          <div class="copy-btn-wrap" id="copyBtnWrap" style="display:none">
+            <button class="copy-btn" id="copyBodyBtn" onclick="copyResponseBody()">Copy</button>
+          </div>
+          <pre class="response-body" id="responseBody" style="display:none"></pre>
+        </div>
+      </div>
+      <!-- Media body -->
+      <div id="mediaBodyWrap" style="display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden">
+        <div class="media-toolbar">
+          <span class="media-ct-badge" id="mediaCTBadge"></span>
+          <span class="meta-chip" id="mediaSizeBadge"></span>
+          <span style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-left:8px">View as:</span>
+          <select class="body-type" id="viewAsSelect" onchange="reRenderMedia()" style="font-size:10px;padding:3px 6px">
+            <option value="auto">Auto</option>
+            <option value="image">Image</option>
+            <option value="video">Video</option>
+            <option value="audio">Audio</option>
+            <option value="pdf">PDF</option>
+            <option value="html">HTML</option>
+            <option value="json">JSON</option>
+            <option value="xml">XML</option>
+            <option value="text">Text</option>
+            <option value="binary">Download</option>
+          </select>
+          <a class="dl-btn" id="mediaDownloadBtn" download>⬇ Download</a>
+        </div>
+        <div class="media-wrap" id="mediaWrap"></div>
+      </div>
+    </div>
+
+    <!-- Response headers -->
+    <div class="res-content" id="res-headers">
+      <div class="headers-table" id="responseHeaders">
+        <div class="empty-state"><div class="empty-title">No response yet</div></div>
+      </div>
+    </div>
+
+    <!-- Code gen -->
+    <div class="res-content" id="res-codegen">
+      <div class="codegen-toolbar">
+        <span style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">Generate:</span>
+        <button class="lang-btn active" onclick="genCode('curl',this)">cURL</button>
+        <button class="lang-btn" onclick="genCode('fetch',this)">JS Fetch</button>
+        <button class="lang-btn" onclick="genCode('axios',this)">Axios</button>
+        <button class="lang-btn" onclick="genCode('python',this)">Python</button>
+        <button class="lang-btn" onclick="genCode('go',this)">Go</button>
+        <button class="lang-btn" onclick="genCode('php',this)">PHP</button>
+        <button class="lang-btn" style="margin-left:auto" onclick="copyCode()">⎘ Copy</button>
+      </div>
+      <textarea class="code-output" id="codeOutput" readonly></textarea>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="toggleHistory()"></div>
+<div class="history-drawer" id="historyDrawer">
+  <div class="history-header">
+    <span class="history-title">Request History</span>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button onclick="clearHistory()" style="background:none;border:1px solid var(--border2);color:var(--text-dim);font-family:var(--mono);font-size:9px;padding:3px 8px;cursor:pointer;border-radius:2px;letter-spacing:.5px;text-transform:uppercase" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text-dim)'">Clear All</button>
+      <button class="close-drawer" onclick="toggleHistory()">×</button>
+    </div>
+  </div>
+  <div class="history-list" id="historyList">
+    <div class="empty-state" style="padding:20px">
+      <div class="empty-title">No history yet</div>
+      <div class="empty-sub">Requests will appear here</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const LS_KEY = 'api_playground_history';
+let reqHistory = [];
+
+function loadHistoryFromLS() {
+  try { const raw = localStorage.getItem(LS_KEY); reqHistory = raw ? JSON.parse(raw) : []; } catch { reqHistory = []; }
+}
+function saveHistoryToLS() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(reqHistory)); } catch {}
+}
+let currentLang = 'curl';
+
+const PRESETS = {
+  jsonplaceholder: { method:'GET', url:'https://jsonplaceholder.typicode.com/posts/1', headers:[], body:'' },
+  catfact:  { method:'GET', url:'https://catfact.ninja/fact', headers:[], body:'' },
+  joke:     { method:'GET', url:'https://v2.jokeapi.dev/joke/Programming', headers:[], body:'' },
+  ipify:    { method:'GET', url:'https://api.ipify.org?format=json', headers:[], body:'' },
+  country:  { method:'GET', url:'https://restcountries.com/v3.1/name/germany', headers:[], body:'' },
+  weather:  { method:'GET', url:'https://api.open-meteo.com/v1/forecast?latitude=40.71&longitude=-74.01&current=temperature_2m,wind_speed_10m', headers:[], body:'' },
+  post: { method:'POST', url:'https://jsonplaceholder.typicode.com/posts',
+    headers:[{key:'Content-Type',value:'application/json'}],
+    body: JSON.stringify({title:'Hello World',body:'Testing the API Playground',userId:1},null,2) },
+  image: { method:'GET', url:'https://picsum.photos/600/400', headers:[{key:'Accept',value:'image/*'}], body:'' },
+  audio: { method:'GET', url:'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', headers:[{key:'Accept',value:'audio/*'}], body:'' },
+  pdf:   { method:'GET', url:'https://www.w3.org/WAI/WCAG21/wcag21.pdf', headers:[{key:'Accept',value:'application/pdf'}], body:'' },
+};
+
+function loadPreset(name) {
+  const p = PRESETS[name];
+  document.getElementById('method').value = p.method;
+  document.getElementById('urlInput').value = p.url;
+  updateMethodStyle();
+  renderKV('headersKV', p.headers);
+  renderKV('paramsKV', []);
+  document.getElementById('bodyEditor').value = p.body;
+  document.getElementById('authType').value = 'none';
+  updateAuthUI();
+  switchTabByName('req', p.body ? 'body' : 'headers');
+  genCode(currentLang);
+}
+
+function addKVRow(cid, key='', value='', enabled=true) {
+  const c = document.getElementById(cid);
+  const row = document.createElement('div');
+  row.className = 'kv-row';
+  row.innerHTML = `
+    <input type="checkbox" class="kv-enabled" ${enabled?'checked':''} onchange="onKVChange()">
+    <input class="kv-input" placeholder="Key" value="${escHtml(key)}" oninput="onKVChange()">
+    <input class="kv-input" placeholder="Value" value="${escHtml(value)}" oninput="onKVChange()">
+    <button class="kv-del" onclick="this.parentElement.remove();onKVChange()">×</button>`;
+  c.appendChild(row);
+}
+
+function renderKV(cid, pairs) {
+  document.getElementById(cid).innerHTML = '';
+  pairs.forEach(p => addKVRow(cid, p.key||'', p.value||'', p.enabled!==false));
+}
+
+function getKV(cid) {
+  return Array.from(document.getElementById(cid).querySelectorAll('.kv-row')).map(r => {
+    const [cb,k,v] = r.querySelectorAll('input');
+    return { enabled:cb.checked, key:k.value.trim(), value:v.value };
+  }).filter(r => r.key);
+}
+
+function onKVChange() { genCode(currentLang); }
+
+function updateAuthUI() {
+  const type = document.getElementById('authType').value;
+  const f = document.getElementById('authFields');
+  f.innerHTML = '';
+  if (type === 'bearer') {
+    f.innerHTML = `<label class="auth-label">Token</label>
+      <input class="kv-input" id="bearerToken" placeholder="eyJhbGciOi..." style="width:100%" oninput="genCode(currentLang)">`;
+  } else if (type === 'basic') {
+    f.innerHTML = `<label class="auth-label">Username</label>
+      <input class="kv-input" id="basicUser" placeholder="username" style="width:100%;margin-bottom:10px" oninput="genCode(currentLang)">
+      <label class="auth-label">Password</label>
+      <input class="kv-input" id="basicPass" type="password" placeholder="password" style="width:100%" oninput="genCode(currentLang)">`;
+  } else if (type === 'apikey') {
+    f.innerHTML = `<label class="auth-label">Header Name</label>
+      <input class="kv-input" id="apiKeyName" placeholder="X-API-Key" style="width:100%;margin-bottom:10px" oninput="genCode(currentLang)">
+      <label class="auth-label">Value</label>
+      <input class="kv-input" id="apiKeyVal" placeholder="your-api-key" style="width:100%" oninput="genCode(currentLang)">`;
+  }
+  genCode(currentLang);
+}
+
+function getAuthHeaders() {
+  const type = document.getElementById('authType').value;
+  if (type==='bearer') { const t=document.getElementById('bearerToken')?.value; return t?[{key:'Authorization',value:`Bearer ${t}`}]:[]; }
+  if (type==='basic') { const u=document.getElementById('basicUser')?.value||'',p=document.getElementById('basicPass')?.value||''; if(u)return[{key:'Authorization',value:`Basic ${btoa(u+':'+p)}`}]; }
+  if (type==='apikey') { const n=document.getElementById('apiKeyName')?.value,v=document.getElementById('apiKeyVal')?.value; if(n&&v)return[{key:n,value:v}]; }
+  return [];
+}
+
+// Track active blob URLs so we can revoke them
+let _activeBlobURL = null;
+let _lastBlob = null, _lastCT = '', _lastSZ = 0;
+function _revokeBlobURL() {
+  if (_activeBlobURL) { URL.revokeObjectURL(_activeBlobURL); _activeBlobURL = null; }
+}
+
+function reRenderMedia() {
+  if (!_lastBlob) return;
+  const sel = document.getElementById('viewAsSelect').value;
+  const mode = sel === 'auto' ? mediaMode(_lastCT) : sel;
+  renderMediaBlob(_lastBlob, _lastCT, _lastSZ, mode);
+}
+
+async function renderMediaBlob(blob, ct, sz, mode) {
+  document.getElementById('emptyState').style.display = 'none';
+
+  if (mode === 'image' || mode === 'video' || mode === 'audio' || mode === 'pdf' || mode === 'html') {
+    _revokeBlobURL();
+    _activeBlobURL = URL.createObjectURL(blob);
+    document.getElementById('textBodyWrap').style.display = 'none';
+    const mw = document.getElementById('mediaBodyWrap');
+    mw.style.display = 'flex';
+    document.getElementById('mediaCTBadge').textContent = ct;
+    document.getElementById('mediaSizeBadge').textContent = fmtBytes(sz);
+    const dlBtn = document.getElementById('mediaDownloadBtn');
+    dlBtn.href = _activeBlobURL;
+    const ext = ct.split('/')[1]?.split('+')[0] || 'bin';
+    dlBtn.download = `response.${ext}`;
+    const wrap = document.getElementById('mediaWrap');
+    wrap.innerHTML = '';
+
+    if (mode === 'image') {
+      const img = document.createElement('img');
+      img.className = 'media-preview-img';
+      img.src = _activeBlobURL;
+      img.alt = 'Image response';
+      img.onload = () => {
+        const info = document.createElement('div');
+        info.className = 'media-info';
+        info.textContent = `${img.naturalWidth} × ${img.naturalHeight}px · ${ct}`;
+        wrap.appendChild(info);
+      };
+      img.onerror = () => {
+        wrap.innerHTML = `<div style="color:var(--red);font-size:12px;padding:20px">⚠ Could not render as image. Try a different "View as" type or download the file.<br><br><a href="${_activeBlobURL}" download="response.bin" style="color:var(--accent);text-decoration:none;border:1px solid var(--accent);padding:6px 14px;border-radius:4px">⬇ Download</a></div>`;
+      };
+      wrap.appendChild(img);
+
+    } else if (mode === 'video') {
+      const v = document.createElement('video');
+      v.className = 'media-preview-video';
+      v.src = _activeBlobURL; v.controls = true; v.autoplay = false;
+      wrap.appendChild(v);
+
+    } else if (mode === 'audio') {
+      const icon = document.createElement('div');
+      icon.style.cssText = 'font-size:56px;opacity:.4;margin:20px 0';
+      icon.textContent = '🎵';
+      wrap.appendChild(icon);
+      const a = document.createElement('audio');
+      a.className = 'media-preview-audio';
+      a.src = _activeBlobURL; a.controls = true;
+      wrap.appendChild(a);
+
+    } else if (mode === 'pdf') {
+      const iframe = document.createElement('iframe');
+      iframe.className = 'media-preview-pdf';
+      iframe.src = _activeBlobURL;
+      wrap.appendChild(iframe);
+
+    } else if (mode === 'html') {
+      const text = await blob.text();
+      const iframe = document.createElement('iframe');
+      iframe.className = 'media-preview-html';
+      iframe.sandbox = 'allow-same-origin';
+      iframe.srcdoc = text;
+      wrap.appendChild(iframe);
+      const details = document.createElement('details');
+      details.style.cssText = 'width:100%;margin-top:8px';
+      details.innerHTML = `<summary style="cursor:pointer;color:var(--text-dim);font-size:11px;padding:4px 0">View Source</summary>
+        <pre style="font-family:var(--mono);font-size:11px;color:var(--text);padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);overflow-x:auto;margin-top:6px;white-space:pre-wrap;word-break:break-all">${escHtml(text)}</pre>`;
+      wrap.appendChild(details);
+    }
+
+  } else {
+    document.getElementById('mediaBodyWrap').style.display = 'none';
+    document.getElementById('textBodyWrap').style.display = 'flex';
+    document.getElementById('copyBtnWrap').style.display = 'flex';
+    const rb = document.getElementById('responseBody');
+    rb.style.display = 'block';
+
+    if (mode === 'binary') {
+      _revokeBlobURL();
+      _activeBlobURL = URL.createObjectURL(blob);
+      const ext = ct.split('/')[1]?.split('+')[0] || 'bin';
+      rb.innerHTML = `<span style="color:var(--text-dim)">Binary response — ${escHtml(ct)} — ${fmtBytes(sz)}\n\n</span><a href="${_activeBlobURL}" download="response.${ext}" style="color:var(--accent);text-decoration:none;border:1px solid var(--accent);padding:6px 14px;border-radius:4px;font-size:12px">⬇ Download file</a>`;
+    } else {
+      const text = await blob.text();
+      let display;
+      if (mode === 'json') {
+        try { display = syntaxHL(JSON.parse(text)); } catch { display = escHtml(text); }
+      } else { display = escHtml(text); }
+      rb.innerHTML = display;
+    }
+  }
+}
+
+// Detect media type from magic bytes (first few bytes of blob)
+async function sniffMagicBytes(blob) {
+  const slice = blob.slice(0, 16);
+  const buf = await slice.arrayBuffer();
+  const b = new Uint8Array(buf);
+  const hex = Array.from(b).map(x=>x.toString(16).padStart(2,'0')).join('');
+  const txt = String.fromCharCode(...b);
+  // Images
+  if (b[0]===0xFF&&b[1]===0xD8&&b[2]===0xFF) return 'image/jpeg';
+  if (b[0]===0x89&&txt.slice(1,4)==='PNG') return 'image/png';
+  if (txt.startsWith('GIF8')) return 'image/gif';
+  if (b[0]===0x52&&b[1]===0x49&&b[2]===0x46&&b[3]===0x46) return 'image/webp'; // RIFF...WEBP
+  if (b[0]===0x42&&b[1]===0x4D) return 'image/bmp';
+  if (b[0]===0x00&&b[1]===0x00&&b[2]===0x01&&b[3]===0x00) return 'image/x-icon';
+  // Check WEBP specifically (bytes 8-11)
+  if (buf.byteLength>=12) { const w=new Uint8Array(buf,8,4); if(String.fromCharCode(...w)==='WEBP') return 'image/webp'; }
+  // Video
+  if (hex.startsWith('000000') && (hex.slice(8,16)==='66747970'||hex.slice(8,16)==='6d703432')) return 'video/mp4';
+  if (b[0]===0x1A&&b[1]===0x45&&b[2]===0xDF&&b[3]===0xA3) return 'video/webm';
+  if (txt.slice(0,4)==='OggS') return 'video/ogg';
+  if (txt.slice(0,4)==='RIFF'&&buf.byteLength>=12&&String.fromCharCode(...new Uint8Array(buf,8,4))==='AVI ') return 'video/avi';
+  // Audio
+  if (b[0]===0xFF&&(b[1]&0xE0)===0xE0) return 'audio/mpeg'; // MP3 frame sync
+  if (txt.slice(0,3)==='ID3') return 'audio/mpeg'; // MP3 ID3 tag
+  if (txt.slice(0,4)==='fLaC') return 'audio/flac';
+  if (txt.slice(0,4)==='OggS') return 'audio/ogg';
+  if (b[0]===0x52&&b[1]===0x49&&b[2]===0x46&&b[3]===0x46&&buf.byteLength>=12&&String.fromCharCode(...new Uint8Array(buf,8,4))==='WAVE') return 'audio/wav';
+  // PDF
+  if (txt.startsWith('%PDF')) return 'application/pdf';
+  // SVG / XML / HTML
+  const textStart = txt.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g,'').trimStart();
+  if (textStart.startsWith('<svg')||textStart.includes('<svg ')) return 'image/svg+xml';
+  if (textStart.startsWith('<?xml')||textStart.startsWith('<rss')||textStart.startsWith('<feed')) return 'application/xml';
+  if (textStart.startsWith('<!DOCTYPE html')||textStart.startsWith('<html')) return 'text/html';
+  // JSON check
+  if (textStart.startsWith('{')||textStart.startsWith('[')) return 'application/json';
+  return null; // unknown
+}
+
+// Classify content-type into a render mode
+function mediaMode(ct) {
+  if (!ct) return 'text';
+  if (ct.includes('json'))  return 'json';
+  if (ct.includes('html'))  return 'html';
+  if (ct.includes('svg'))   return 'image';   // SVG renders as image
+  if (ct.includes('xml'))   return 'xml';
+  if (ct.startsWith('image/')) return 'image';
+  if (ct.startsWith('video/')) return 'video';
+  if (ct.startsWith('audio/')) return 'audio';
+  if (ct.includes('pdf'))  return 'pdf';
+  if (ct.startsWith('text/')) return 'text';
+  return 'binary';
+}
+
+async function sendRequest() {
+  const method = document.getElementById('method').value;
+  let url = document.getElementById('urlInput').value.trim();
+  if (!url) return showToast('Please enter a URL');
+  if (!url.startsWith('http')) url = 'https://' + url;
+
+  const params = getKV('paramsKV').filter(p=>p.enabled);
+  if (params.length) {
+    url = url.split('?')[0] + '?' + new URLSearchParams(params.map(p=>[p.key,p.value])).toString();
+    document.getElementById('urlInput').value = url;
+  }
+
+  const allH = [...getKV('headersKV').filter(h=>h.enabled!==false), ...getAuthHeaders()];
+  const headersObj = {};
+  allH.forEach(h => { headersObj[h.key] = h.value; });
+  const bodyVal = (method!=='GET'&&method!=='HEAD') ? document.getElementById('bodyEditor').value||undefined : undefined;
+
+  const btn = document.getElementById('sendBtn');
+  btn.className = 'send-btn loading';
+  btn.innerHTML = '<span class="spinner"></span>Sending...';
+
+  const t0 = performance.now();
+  try {
+    const opts = { method, headers: headersObj };
+    if (bodyVal) opts.body = bodyVal;
+    const resp = await fetch(url, opts);
+    const elapsed = Math.round(performance.now() - t0);
+
+    // Always read as blob so we handle binary correctly
+    const blob = await resp.blob();
+    const sz = blob.size;
+    let ct = (resp.headers.get('content-type') || blob.type || '').split(';')[0].trim();
+    let mode = mediaMode(ct);
+
+    // If content-type is absent/generic, sniff magic bytes
+    if (mode === 'binary' || mode === 'text' || !ct || ct === 'application/octet-stream' || ct === 'binary/octet-stream') {
+      const sniffed = await sniffMagicBytes(blob);
+      if (sniffed) { ct = sniffed; mode = mediaMode(ct); }
+    }
+
+    // Status bar
+    const cls = resp.status<300?'2xx':resp.status<400?'3xx':resp.status<500?'4xx':'5xx';
+    document.getElementById('statusBadge').innerHTML = `<span class="status-badge status-${cls}">${resp.status} ${resp.statusText}</span>`;
+    document.getElementById('timeBadge').innerHTML   = `<span class="meta-chip">${elapsed}ms</span>`;
+    document.getElementById('sizeBadge').innerHTML   = `<span class="meta-chip">${fmtBytes(sz)}</span>`;
+
+    // Response headers
+    const rhDiv = document.getElementById('responseHeaders');
+    rhDiv.innerHTML = '';
+    resp.headers.forEach((val, name) => {
+      const row = document.createElement('div');
+      row.className = 'header-row';
+      row.innerHTML = `<span class="header-name">${escHtml(name)}</span><span class="header-val">${escHtml(val)}</span>`;
+      rhDiv.appendChild(row);
+    });
+
+    // Store blob for View As re-render
+    _lastBlob = blob; _lastCT = ct; _lastSZ = sz;
+
+    // Reset View As selector to Auto on fresh response
+    const vasSel = document.getElementById('viewAsSelect');
+    vasSel.value = 'auto';
+
+    // Render
+    await renderMediaBlob(blob, ct, sz, mode);
+
+    addHistory(method, url, resp.status, getKV('headersKV').filter(h=>h.enabled!==false), document.getElementById('bodyEditor').value);
+
+  } catch(err) {
+    const elapsed = Math.round(performance.now() - t0);
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('mediaBodyWrap').style.display = 'none';
+    document.getElementById('textBodyWrap').style.display = 'flex';
+    document.getElementById('copyBtnWrap').style.display = 'none';
+    const rb = document.getElementById('responseBody');
+    rb.innerHTML = `<span style="color:var(--red)">⚠ ${escHtml(err.message)}\n\nLikely a CORS restriction from the server.\nThe generated code in Code Gen will still work from a terminal.</span>`;
+    rb.style.display = 'block';
+    document.getElementById('statusBadge').innerHTML = `<span class="status-badge status-4xx">Network / CORS Error</span>`;
+    document.getElementById('timeBadge').innerHTML   = `<span class="meta-chip">${elapsed}ms</span>`;
+    document.getElementById('sizeBadge').innerHTML   = '';
+  }
+  btn.className = 'send-btn';
+  btn.innerHTML = '▶ Send';
+}
+
+function fmtBytes(b) { if(b<1024)return b+' B'; if(b<1048576)return(b/1024).toFixed(1)+' KB'; return(b/1048576).toFixed(1)+' MB'; }
+
+function syntaxHL(json) {
+  return escHtml(JSON.stringify(json,null,2)).replace(
+    /("(\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+    m => { let c='json-num'; if(/^"/.test(m))c=/:$/.test(m)?'json-key':'json-str'; else if(/true|false/.test(m))c='json-bool'; else if(/null/.test(m))c='json-null'; return `<span class="${c}">${m}</span>`; }
+  );
+}
+
+function genCode(lang, btn) {
+  currentLang = lang;
+  if (btn) { document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+  const method  = document.getElementById('method').value;
+  const url     = document.getElementById('urlInput').value || 'https://api.example.com/endpoint';
+  const headers = [...getKV('headersKV').filter(h=>h.enabled!==false), ...getAuthHeaders()];
+  const body    = document.getElementById('bodyEditor').value;
+  let code = '';
+
+  if (lang==='curl') {
+    code = `curl -X ${method} '${url}'`;
+    headers.forEach(h => { code += ` \\\n  -H '${h.key}: ${h.value}'`; });
+    if (body) code += ` \\\n  -d '${body.replace(/'/g,"\\'")}'`;
+  } else if (lang==='fetch') {
+    const ho = headers.length?`\n    headers: {\n${headers.map(h=>`      '${h.key}': '${h.value}'`).join(',\n')}\n    },`:'';
+    const bo = body?`\n    body: JSON.stringify(${body}),`:'';
+    code = `const response = await fetch('${url}', {\n  method: '${method}',${ho}${bo}\n});\n\nconst data = await response.json();\nconsole.log(data);`;
+  } else if (lang==='axios') {
+    const ho = headers.length?`\n  headers: {\n${headers.map(h=>`    '${h.key}': '${h.value}'`).join(',\n')}\n  },`:'';
+    const bo = body?`\n  data: ${body},`:'';
+    code = `import axios from 'axios';\n\nconst { data } = await axios({\n  method: '${method.toLowerCase()}',\n  url: '${url}',${ho}${bo}\n});\n\nconsole.log(data);`;
+  } else if (lang==='python') {
+    const hd = headers.length?`\nheaders = {\n${headers.map(h=>`    '${h.key}': '${h.value}'`).join(',\n')}\n}`:'\nheaders = {}';
+    const bd = body?`\ndata = ${body}`:'';
+    const ba = body?', json=data':'';
+    code = `import requests\n${hd}${bd}\n\nresponse = requests.${method.toLowerCase()}(\n    '${url}',\n    headers=headers${ba}\n)\n\nprint(response.status_code)\nprint(response.json())`;
+  } else if (lang==='go') {
+    const hset = headers.map(h=>`\treq.Header.Set("${h.key}", "${h.value}")`).join('\n');
+    const bi = body?'\n\t"strings"':'';
+    code = `package main\n\nimport (\n\t"fmt"\n\t"io"\n\t"net/http"${bi}\n)\n\nfunc main() {\n\t${body?`body := strings.NewReader(\`${body}\`)\n\t`:''}req, _ := http.NewRequest("${method}", "${url}", ${body?'body':'nil'})\n${hset}\n\n\tclient := &http.Client{}\n\tresp, _ := client.Do(req)\n\tdefer resp.Body.Close()\n\n\tb, _ := io.ReadAll(resp.Body)\n\tfmt.Println(string(b))\n}`;
+  } else if (lang==='php') {
+    const ha = headers.map(h=>`    '${h.key}: ${h.value}'`).join(',\n');
+    const bo = body?`\n    CURLOPT_POSTFIELDS => '${body.replace(/'/g,"\\'")}',`:'';
+    code = `<?php\n$ch = curl_init();\ncurl_setopt_array($ch, [\n    CURLOPT_URL => '${url}',\n    CURLOPT_CUSTOMREQUEST => '${method}',\n    CURLOPT_RETURNTRANSFER => true,\n    CURLOPT_HTTPHEADER => [\n${ha}\n    ],${bo}\n]);\n\n$response = curl_exec($ch);\ncurl_close($ch);\n\necho $response;\n?>`;
+  }
+  document.getElementById('codeOutput').value = code;
+}
+
+function switchTab(panel, name, btn) {
+  const pre = panel==='req'?'req-':'res-';
+  document.querySelectorAll(`[id^="${pre}"]`).forEach(el=>el.classList.remove('active'));
+  const cls = panel==='req'?'.tab':'.res-tab';
+  if (btn) { btn.closest('.panel-tabs,.response-tabs').querySelectorAll(cls).forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+  const t = document.getElementById(pre+name); if(t) t.classList.add('active');
+  if (panel==='res' && name==='codegen') genCode(currentLang);
+}
+
+function switchTabByName(panel, name) {
+  const pre = panel==='req'?'req-':'res-';
+  document.querySelectorAll(`[id^="${pre}"]`).forEach(el=>el.classList.remove('active'));
+  const t = document.getElementById(pre+name); if(t) t.classList.add('active');
+  const cls = panel==='req'?'.tab':'.res-tab';
+  const bar = panel==='req'?document.querySelector('.panel-tabs'):document.querySelector('.response-tabs');
+  if(bar) bar.querySelectorAll(cls).forEach(b=>{ b.classList.toggle('active',b.textContent.toLowerCase().includes(name)); });
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function updateMethodStyle() { const s=document.getElementById('method'); s.className='method-select '+s.value; genCode(currentLang); }
+function formatBody() { const el=document.getElementById('bodyEditor'); try{el.value=JSON.stringify(JSON.parse(el.value),null,2);}catch{showToast('Invalid JSON — cannot format');} }
+
+function copyResponseBody() {
+  navigator.clipboard.writeText(document.getElementById('responseBody').innerText).then(()=>{
+    const btn=document.getElementById('copyBodyBtn');
+    btn.textContent='Copied!'; btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied');},1500);
+  });
+}
+function copyCode() { navigator.clipboard.writeText(document.getElementById('codeOutput').value).then(()=>showToast('Code copied!','ok')); }
+function showToast(msg, type) {
+  const t=document.getElementById('toast'); t.textContent=msg;
+  const ok=type==='ok';
+  t.style.borderColor=ok?'var(--green)':'var(--red)'; t.style.color=ok?'var(--green)':'var(--red)';
+  t.style.background=ok?'rgba(0,255,157,.1)':'rgba(255,71,87,.1)';
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function addHistory(method, url, status, headers, body) {
+  reqHistory.unshift({
+    method, url, status,
+    headers: headers || [],
+    body: body || '',
+    time: new Date().toLocaleTimeString(),
+    date: new Date().toLocaleDateString()
+  });
+  if (reqHistory.length > 100) reqHistory.pop();
+  saveHistoryToLS();
+  renderHistory();
+}
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (!reqHistory.length) {
+    list.innerHTML = '<div class="empty-state" style="padding:20px"><div class="empty-title">No history</div><div class="empty-sub">Requests will be saved here<br>and persist across sessions.</div></div>';
+    return;
+  }
+  const mc = m => m==='GET'?'var(--accent2)':m==='POST'?'var(--accent3)':m==='DELETE'?'var(--red)':m==='PUT'?'var(--yellow)':'var(--accent)';
+  list.innerHTML = reqHistory.map((h,i) => {
+    const cls = h.status < 300 ? 'status-2xx' : h.status < 400 ? 'status-3xx' : 'status-4xx';
+    return `<div class="history-item" onclick="loadFromHistory(${i})">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+        <span style="color:${mc(h.method)};font-size:10px;font-weight:700">${h.method}</span>
+        <span style="color:var(--text-dim);font-size:9px">${h.date} ${h.time}</span>
+        <button onclick="event.stopPropagation();deleteHistory(${i})" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:13px;padding:0 2px;line-height:1" title="Remove">×</button>
+      </div>
+      <div class="history-item-url">${escHtml(h.url.length>60?h.url.slice(0,60)+'…':h.url)}</div>
+      <div class="history-item-status" style="margin-top:4px"><span class="status-badge ${cls}" style="font-size:9px">${h.status}</span></div>
+    </div>`;
+  }).join('');
+}
+function loadFromHistory(i) {
+  const h = reqHistory[i];
+  document.getElementById('method').value = h.method;
+  document.getElementById('urlInput').value = h.url;
+  updateMethodStyle();
+  // Restore headers
+  if (h.headers && h.headers.length) {
+    renderKV('headersKV', h.headers);
+  }
+  // Restore body
+  if (h.body) {
+    document.getElementById('bodyEditor').value = h.body;
+    switchTabByName('req', 'body');
+  }
+  genCode(currentLang);
+  toggleHistory();
+}
+function deleteHistory(i) {
+  reqHistory.splice(i, 1);
+  saveHistoryToLS();
+  renderHistory();
+}
+function clearHistory() {
+  if (!confirm('Clear all history?')) return;
+  reqHistory = [];
+  saveHistoryToLS();
+  renderHistory();
+}
+function toggleHistory() {
+  document.getElementById('historyDrawer').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+
+// Init — load persisted history then boot UI
+loadHistoryFromLS();
+renderHistory();
+addKVRow('headersKV','Accept','application/json');
+genCode('curl');
+</script>
+</body>
+</html>
