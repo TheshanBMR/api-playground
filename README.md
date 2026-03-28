@@ -4,7 +4,7 @@
 
 **[→ Live Demo](https://theshanbmr.github.io/api-playground)**
 
-![API Playground Screenshot](https://i.imgur.com/placeholder.png)
+![API Playground Screenshot](https://i.ibb.co/HLmtnrm5/ss.png)
 
 ---
 
